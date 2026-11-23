@@ -1,0 +1,23 @@
+name: Compilar (iOS)
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Versión de Xcode
+        run: xcodebuild -version
+      - name: Compilar para el simulador
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project CocoAudioReader.xcodeproj \
+            -target CocoAudioReader \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            CODE_SIGNING_ALLOWED=NO \
+            build
