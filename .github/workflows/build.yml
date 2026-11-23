@@ -9,9 +9,11 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
+
       - name: Versión de Xcode
         run: xcodebuild -version
-      - name: Compilar para el simulador
+
+      - name: Compilar para el simulador (verificación)
         run: |
           set -o pipefail
           xcodebuild \
@@ -19,5 +21,34 @@ jobs:
             -target CocoAudioReader \
             -configuration Debug \
             -sdk iphonesimulator \
+            SYMROOT="$PWD/build-sim" \
             CODE_SIGNING_ALLOWED=NO \
             build
+
+      - name: Compilar para iPhone (sin firmar)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project CocoAudioReader.xcodeproj \
+            -target CocoAudioReader \
+            -configuration Release \
+            -sdk iphoneos \
+            SYMROOT="$PWD/build-device" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Empaquetar .ipa
+        run: |
+          mkdir -p Payload
+          cp -R build-device/Release-iphoneos/CocoAudioReader.app Payload/
+          zip -qr CocoAudioReader.ipa Payload
+          ls -lh CocoAudioReader.ipa
+
+      - name: Publicar .ipa para descargar
+        uses: actions/upload-artifact@v4
+        with:
+          name: CocoAudioReader-ipa
+          path: CocoAudioReader.ipa
+          retention-days: 30
